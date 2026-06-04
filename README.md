@@ -10,11 +10,19 @@ The firmware currently combines:
 - 0.96 inch SSD1306-compatible OLED over software I2C.
 - USART1 serial dashboard, keys, LEDs, and buzzer linkage.
 
+## Download
+
+The full Keil project source package is uploaded as:
+
+- `WatchSense-F407-Prototype.zip`
+
+Download and extract it to get the complete `Project/` tree, Keil project file, firmware source, drivers, documentation, and prebuilt hex.
+
 ## Current Status
 
-- Build target: `Project/USER/TEST.uvprojx`
-- Prebuilt hex: `Project/OBJ/TEST.hex`
-- Main application: `Project/USER/test.c`
+- Build target inside ZIP: `Project/USER/TEST.uvprojx`
+- Prebuilt hex inside ZIP: `Project/OBJ/TEST.hex`
+- Main application inside ZIP: `Project/USER/test.c`
 - Wiring guide: `Project/WATCHSENSE_WIRING_GUIDE.txt`
 - Prototype notes: `Project/WATCHSENSE_PROTOTYPE_README.txt`
 - Reference projects: `REFERENCE_PROJECTS.md`
@@ -54,7 +62,7 @@ All modules must share GND. The project is designed for 3.3V logic.
 
 ## Build
 
-Build with Keil uVision:
+After extracting `WatchSense-F407-Prototype.zip`, build with Keil uVision:
 
 ```powershell
 & 'C:\Keil_v5\UV4\UV4.exe' -j0 -b 'Project\USER\TEST.uvprojx'
