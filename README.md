@@ -1,8 +1,8 @@
-# WatchSense-F407 原型工程
+﻿# WatchSense-F407 原型工程
 
-这是一个基于 STM32F407ZGT6 的桌面原型项目。目标是先把传感器联调、OLED 显示、校准流程和联动功能跑稳，后续再考虑缩小成手表形态。
+这是一个基于 STM32F407ZGT6 的桌面原型，目标是先把传感器联调、显示、校准和联动跑稳，后续再缩小成手表形态。
 
-## 当前功能
+当前固件已经整合:
 
 - VL53L0X 激光测距模块，软件 I2C。
 - BME280 温湿度气压模块，SPI1。
@@ -11,25 +11,23 @@
 - 0.96 寸 SSD1306 兼容 OLED，软件 I2C。
 - USART1 串口看板、按键、LED、蜂鸣器联动。
 
-## 下载完整工程
+## 当前状态
 
-完整 Keil 工程放在这个压缩包里:
-
-- `WatchSense-F407-Prototype.zip`
-
-压缩包内包含完整 `Project/` 工程树、Keil 工程文件、源码、驱动、文档和预编译 HEX。
-
-## 仓库文件说明
-
-为了避免页面太乱，仓库根目录只保留必要说明和完整工程包。完整源码以 ZIP 内的 `Project/` 为准。
-
-- 首次上电教程: `Project/WATCHSENSE_FIRST_RUN_GUIDE.txt`
+- Keil 工程: `Project/USER/TEST.uvprojx`
+- 预编译 HEX: `Project/OBJ/TEST.hex`
+- 主程序: `Project/USER/test.c`
+- 傻瓜式首次上电教程: `Project/WATCHSENSE_FIRST_RUN_GUIDE.txt`
 - 集中接线表: `Project/WATCHSENSE_WIRING_GUIDE.txt`
-- 原型功能说明: `Project/WATCHSENSE_PROTOTYPE_README.txt`
-- 参考来源说明: `REFERENCE_PROJECTS.md`
-- 完整工程包: `WatchSense-F407-Prototype.zip`
+- 原型说明: `Project/WATCHSENSE_PROTOTYPE_README.txt`
+- 参考项目说明: `REFERENCE_PROJECTS.md`
 
-## 第一次使用顺序
+## 第一次使用
+
+第一次接线、上电、校准和排查问题，先看:
+
+`Project/WATCHSENSE_FIRST_RUN_GUIDE.txt`
+
+最短安全顺序:
 
 1. 先接 USB-TTL 和 OLED。
 2. 再接 VL53L0X，用 100mm 目标按 `WK_UP` 校准。
@@ -37,9 +35,9 @@
 4. 再接 GY-91 / MPU9250，切到 `motion` 页面，保持静止，按 `WK_UP` 校准。
 5. 最后接 BME280 到 SPI1，等待温湿度读数稳定。
 
-详细步骤请看 `Project/WATCHSENSE_FIRST_RUN_GUIDE.txt`。
+## 硬件引脚速查
 
-## 引脚速查
+详细接线以 `Project/WATCHSENSE_WIRING_GUIDE.txt` 为准。
 
 | 模块 | 总线 | STM32F407 引脚 |
 | --- | --- | --- |
@@ -77,11 +75,22 @@
 & 'C:\Keil_v5\UV4\UV4.exe' -j0 -b 'Project\USER\TEST.uvprojx'
 ```
 
-最近一次本地检查结果为 `0 Error(s), 0 Warning(s)`。
+最近一次检查结果为 `0 Error(s), 0 Warning(s)`。
 
-## 注意
+## 可靠性说明
 
 - 传感器初始化采用 fail-soft 策略: 某个模块缺失会显示 `FAIL`，其他模块继续运行。
 - BME280、VL53L0X、MAX30102、MPU9250 未就绪时会每 5 秒重试。
+- 按键扫描是非阻塞的，长按按键不会卡住 MAX30102 采样。
 - MPU9250 每 50ms 采样一次，用于姿态、轻敲、抬腕和粗略步数联动。
 - MAX30102 的 HR/SpO2 是项目演示估算，不是医疗测量。
+
+## 九轴说明
+
+GY-91 上电时尽量保持静止。进入 `motion` 页面后，按 `WK_UP` 可重新做陀螺仪零偏校准，按 `KEY1` 可清空 STEP/TAP/LIFT 计数。
+
+STEP、TAP、LIFT 是实用演示算法，适合项目展示和联动验证；如果要做真正手表，还需要结合实测继续调阈值。
+
+## 许可说明
+
+这是一个混合嵌入式原型工程，包含本地项目代码和厂商/参考代码。第三方源码保留其原始声明和许可；在完整审计前，不要假设整个工程只有一个统一开源许可证。
