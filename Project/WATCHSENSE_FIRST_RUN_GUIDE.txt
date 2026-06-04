@@ -1,0 +1,269 @@
+WatchSense-F407 傻瓜式首次上电教程
+
+适用对象:
+- 第一次把这套模块接到 STM32F407ZGT6 上。
+- 不想边看代码边猜哪个键干什么。
+- 目标是先把“能显示、能测距、能看环境、能看心率原始状态、能看九轴动作”跑起来。
+
+准备清单:
+- STM32F407ZGT6 开发板。
+- 0.96 寸 OLED，常见 SSD1306，I2C 地址 0x3C。
+- VL53L0X 测距模块。
+- BME280 模块，按本工程接 SPI。
+- MAX30102 心率血氧模块。
+- GY-91 / MPU9250 九轴模块，默认 AD0 为低电平，I2C 地址 0x68。
+- USB-TTL 串口模块。
+- 杜邦线若干。
+- 3.3V 供电和公共 GND。
+
+第一步: 先不要一口气全接
+
+推荐顺序:
+1. 只接开发板、USB-TTL、OLED。
+2. OLED 正常后再接 VL53L0X。
+3. VL53L0X 正常后再接 MAX30102。
+4. MAX30102 正常后再接 GY-91 / MPU9250。
+5. 最后接 BME280 的 SPI 线。
+
+这样做的原因:
+- 所有 I2C 模块共用 PB8/PB9。
+- 如果一开始全接，任何一个模块接反都会拖死整条 I2C 总线。
+- 分步接线能最快定位是哪一个模块出问题。
+
+第二步: 最小启动接线
+
+USB-TTL:
+- USB-TTL RX -> PA9 / USART1_TX
+- USB-TTL TX -> PA10 / USART1_RX
+- USB-TTL GND -> GND
+
+OLED:
+- OLED SCL -> PB8
+- OLED SDA -> PB9
+- OLED VCC -> 3.3V
+- OLED GND -> GND
+
+串口助手设置:
+- 波特率: 115200
+- 数据位: 8
+- 校验: none
+- 停止位: 1
+
+上电后应该看到:
+- OLED 第 0 行显示 WATCHSENSE-F407。
+- 串口出现 WatchSense-F407 desktop station prototype。
+- 串口出现 OLED OK。
+
+如果 OLED 不亮:
+- 先确认 OLED VCC/GND。
+- 再确认 PB8/PB9 没接反。
+- 如果你的 OLED 地址是 0x3D，需要修改 Project/HARDWARE/OLED/oled.h 里的 OLED_I2C_ADDR。
+
+第三步: 接 VL53L0X
+
+VL53L0X:
+- SCL -> PB8
+- SDA -> PB9
+- XSHUT -> PB5
+- VIN/VCC -> 3.3V
+- GND -> GND
+
+重新上电后应该看到:
+- 串口出现 VL53L0X OK。
+- OLED dashboard 页面能看到 DIST: xxxxMM。
+
+VL53L0X 100mm 校准:
+1. 找一个平面物体，比如纸盒、书、挡板。
+2. 让物体正对 VL53L0X。
+3. 物体和传感器正面距离尽量放到 100mm。
+4. 保持不动。
+5. 在非 motion 页面按 WK_UP。
+6. 串口应出现 Calibrating VL53L0X offset at 100 mm。
+7. 串口出现 Calibration OK 就完成。
+
+校准后怎么判断正常:
+- 把目标放在 100mm 左右，OLED 上 DIST 应接近 100MM。
+- 允许有几毫米到十几毫米误差，模块、角度和目标反光都会影响读数。
+
+如果 VL53L0X FAIL:
+- 检查 PB8/PB9。
+- 检查 XSHUT 是否接 PB5。
+- 检查是否和其他 I2C 模块地址冲突，VL53L0X 默认是 0x29。
+- 先只保留 OLED + VL53L0X，断开 MAX30102 和 GY-91 再试。
+
+第四步: 接 MAX30102
+
+MAX30102:
+- SCL -> PB8
+- SDA -> PB9
+- VIN/VCC -> 3.3V
+- GND -> GND
+
+重新上电后应该看到:
+- 串口出现 MAX30102 OK。
+- 按 KEY0 切到 health 页面。
+- OLED 显示 HR、SPO2、IR、RED、BEAT、FINGER。
+
+手指怎么放:
+1. 手指轻轻盖住传感器窗口。
+2. 不要压太死。
+3. 尽量挡住环境光。
+4. 等 5 到 10 秒。
+
+正常现象:
+- 没放手指时显示 FINGER: NO 或 HR:NO FINGER。
+- 放手指后 IR/RED 数值变大。
+- HR 需要几个脉搏峰之后才会有估算。
+
+注意:
+- 当前 HR/SpO2 是演示估算，不是医疗测量。
+- 如果一直 NO FINGER，通常是供电、手指压力、遮光或 I2C 接线问题。
+
+第五步: 接 GY-91 / MPU9250
+
+GY-91 / MPU9250:
+- SCL -> PB8
+- SDA -> PB9
+- AD0 -> GND 或保持模块默认低电平
+- VCC -> 3.3V
+- GND -> GND
+
+默认地址:
+- MPU9250 地址: 0x68
+- AK8963 磁力计地址: 0x0C
+
+重新上电后应该看到:
+- 串口出现 MPU9250 OK。
+- 按 KEY0 切到 motion 页面。
+- OLED 显示 POST、STEP、TAP、LIFT、MAG、HEAD、TEMP 等信息。
+
+九轴静止校准:
+1. 按 KEY0 切到 motion 页面。
+2. 把 GY-91 模块平放到桌面。
+3. 手离开模块，保持 0.5 秒以上不要动。
+4. 按 WK_UP。
+5. 串口出现 MPU9250 keep still, calibrating。
+6. 串口出现 MPU9250 calibration OK 就完成。
+
+什么时候需要重新校准九轴:
+- 每次重新固定模块位置后。
+- 每次把模块装进外壳后。
+- 上电后姿态明显乱跳时。
+- 抬腕/轻敲触发太敏感或太迟钝时。
+
+motion 页面怎么看:
+- POST: 当前大概姿态，比如 FLAT、LEFT、RIGHT、UP。
+- STEP: 粗略步数。
+- TAP: 轻敲次数。
+- LIFT: 抬腕次数。
+- MAG: 磁力计是否可用。
+- HEAD: 简化方向，例如 N、S、E、W、NE。
+- TEMP: MPU9250 芯片温度。
+
+motion 页面按键:
+- KEY1: 清空 STEP/TAP/LIFT 计数。
+- WK_UP: 重新做九轴静止校准。
+- KEY0: 切到下一个页面。
+
+注意:
+- STEP、TAP、LIFT 是演示算法，能用但不是专业运动手表算法。
+- 抬腕和轻敲会短促触发 LED1/BEEP。
+- 如果距离报警正在响，距离报警优先。
+
+第六步: 接 BME280
+
+BME280 按 SPI 接，不按 I2C 接:
+- SCK/SCL -> PA5 / SPI1_SCK
+- SDO/MISO -> PA6 / SPI1_MISO
+- SDI/MOSI -> PA7 / SPI1_MOSI
+- CSB/CS -> PA4
+- VCC/VIN -> 3.3V
+- GND -> GND
+
+重新上电后应该看到:
+- 串口出现 BME280 OK。
+- 按 KEY0 切到 environment 页面。
+- OLED 显示温度、湿度和气压。
+
+BME280 使用注意:
+- 不需要手动校准。
+- 上电后等几十秒，温湿度会更稳定。
+- 不要让 BME280 紧贴稳压芯片、手指、热风或 MCU。
+- 如果温度偏高，通常是模块离热源太近。
+
+第七步: 页面和按键总表
+
+页面切换:
+- KEY0: dashboard -> environment -> distance -> health -> motion -> dashboard。
+
+普通页面:
+- KEY1: 切换 VL53L0X 测距模式。
+- KEY2: 切换距离报警阈值，依次为 80/150/300/600 mm，然后关闭报警。
+- WK_UP: 做 VL53L0X 100mm 距离校准。
+
+motion 页面:
+- KEY1: 清空运动计数。
+- KEY2: 仍然切换距离报警阈值。
+- WK_UP: 做 MPU9250 静止校准。
+
+第八步: 第一次完整测试流程
+
+按这个顺序做:
+1. 上电，看 OLED 是否显示 WATCHSENSE-F407。
+2. 打开串口，看 OLED、BME280、VL53L0X、MAX30102、MPU9250 是否 OK。
+3. 按 KEY0，确认 5 个页面都能切换。
+4. 在 distance 页面看 DIST 是否变化。
+5. 放 100mm 目标，按 WK_UP 做 VL53L0X 校准。
+6. 切到 motion 页面，把 GY-91 平放，按 WK_UP 做九轴校准。
+7. 拿起模块轻轻转动，看 POST 是否变化。
+8. 轻敲模块，看 TAP 是否增加，并听到短促 BEEP。
+9. 做一个抬腕动作，看 LIFT 是否增加。
+10. 切到 health 页面，放手指，看 IR/RED 是否明显增大。
+11. 切到 environment 页面，等几十秒，看温湿度是否稳定。
+12. 把手或物体靠近 VL53L0X，确认距离低于阈值时 LED1/BEEP 会报警。
+
+第九步: 常见故障快速判断
+
+整条 I2C 都 FAIL:
+- 先断开 VL53L0X、MAX30102、GY-91，只留 OLED。
+- 如果 OLED 也不亮，查 PB8/PB9、3.3V、GND。
+- 如果 OLED 正常，再一个一个模块接回去。
+
+只有 GY-91 FAIL:
+- 确认 AD0 是 GND 或低电平。
+- 确认模块不是 5V 电平直连。
+- 确认地址不是 0x69；如果是 0x69，需要改代码。
+
+只有 BME280 FAIL:
+- 检查是不是误接到了 PB3/PB4/PB5。
+- 本工程必须用 PA5/PA6/PA7/PA4。
+- 检查 CSB 是否接 PA4。
+
+MAX30102 没心率:
+- 先看 IR/RED 数值是否变化。
+- IR/RED 不变，多半是接线或供电。
+- IR/RED 变了但 HR 没出来，手指轻放并等几秒。
+
+距离报警一直响:
+- 按 KEY2 调高阈值或关闭报警。
+- 检查 VL53L0X 前面是否有东西太近。
+- 检查是否刚做过错误的 100mm 校准。
+
+第十步: 最推荐的验收标准
+
+算通过:
+- Keil 编译 0 Error(s), 0 Warning(s)。
+- OLED 能显示 5 个页面。
+- VL53L0X 距离变化正常。
+- BME280 有温湿度气压。
+- MAX30102 放手指后 IR/RED 变大。
+- motion 页姿态会变，STEP/TAP/LIFT 至少能响应动作。
+- 距离过近时 LED1/BEEP 报警。
+- 轻敲/抬腕时 LED1/BEEP 有短促提示。
+
+算还需要排查:
+- 某个模块一直 FAIL。
+- OLED 页面不切换。
+- 串口没有任何输出。
+- I2C 模块一接上就全部 FAIL。
+- Keil 编译不是 0 Error(s), 0 Warning(s)。
