@@ -1,68 +1,68 @@
-# Helpful Reference Projects
+# 参考项目说明
 
-These projects are useful references for the next WatchSense-F407 iterations. They are not copied into this repository; check each project's license before importing code.
+这些项目适合作为 WatchSense-F407 后续迭代参考。本仓库没有直接复制这些项目源码；真正移植代码前，请先检查每个项目自己的许可证。
 
-## MAX30102 / Health Sensing
+## MAX30102 / 健康检测方向
 
 ### NimaGhayour/MAX30102-STM32-HeartRateMonitor
 
-- URL: https://github.com/NimaGhayour/MAX30102-STM32-HeartRateMonitor
-- Usefulness: small STM32-focused MAX30102 heart-rate monitor project.
-- What to learn from it: signal flow, heart-rate display logic, and simple embedded MAX30102 integration structure.
-- Caution: compare algorithm assumptions before replacing the current demo estimator.
+- 地址: https://github.com/NimaGhayour/MAX30102-STM32-HeartRateMonitor
+- 参考价值: STM32 上的 MAX30102 心率监测小项目。
+- 可以学习: 信号处理流程、心率显示逻辑、MAX30102 嵌入式集成方式。
+- 注意事项: 替换当前演示估算算法前，要先对比采样频率、滤波和峰值判断假设。
 
 ### libdriver/max30102
 
-- URL: https://github.com/libdriver/max30102
-- Usefulness: dedicated MAX30102 driver library.
-- What to learn from it: register coverage, FIFO handling, interrupt configuration, self-test style APIs.
-- Caution: adapt only the concepts or clearly licensed driver portions; the current project uses a compact custom driver.
+- 地址: https://github.com/libdriver/max30102
+- 参考价值: 较完整的 MAX30102 驱动库。
+- 可以学习: 寄存器覆盖、FIFO 处理、中断配置、自检接口。
+- 注意事项: 当前工程使用轻量自写驱动，建议只参考思路或在确认许可证后移植。
 
-## Watch Firmware Architecture
+## 手表固件架构方向
 
 ### ravindsk/STM32_Smart_watch_firmware
 
-- URL: https://github.com/ravindsk/STM32_Smart_watch_firmware
-- Usefulness: STM32 smartwatch firmware reference.
-- What to learn from it: page layout, firmware structure, power and UI organization.
-- Caution: this project may target different STM32 hardware and peripherals.
+- 地址: https://github.com/ravindsk/STM32_Smart_watch_firmware
+- 参考价值: STM32 智能手表固件参考。
+- 可以学习: 页面组织、固件结构、电源和 UI 管理方式。
+- 注意事项: 目标硬件和外设可能与本项目不同，不能直接照搬。
 
 ### No-Chicken/OV-Watch
 
-- URL: https://github.com/No-Chicken/OV-Watch
-- Usefulness: more complete open smartwatch firmware direction.
-- What to learn from it: application-level watch features, task split, LVGL/FreeRTOS style architecture.
-- Caution: much larger than the current bare-metal StdPeriph prototype; use it for architecture inspiration, not direct porting.
+- 地址: https://github.com/No-Chicken/OV-Watch
+- 参考价值: 更完整的开源手表固件方向。
+- 可以学习: 应用层手表功能、任务划分、LVGL/FreeRTOS 风格架构。
+- 注意事项: 规模明显大于当前裸机 StdPeriph 原型，适合作架构参考，不适合直接移植。
 
-## Display / UI
+## OLED / UI 方向
 
 ### afiskon/stm32-ssd1306
 
-- URL: https://github.com/afiskon/stm32-ssd1306
-- Usefulness: mature SSD1306 OLED library for STM32.
-- What to learn from it: framebuffer drawing, fonts, lines, icons, and cleaner UI primitives.
-- Caution: framebuffer costs RAM; the current OLED driver is intentionally lightweight text mode.
+- 地址: https://github.com/afiskon/stm32-ssd1306
+- 参考价值: 成熟的 STM32 SSD1306 OLED 库。
+- 可以学习: framebuffer 绘图、字体、线条、图标和更清晰的 UI 基础能力。
+- 注意事项: framebuffer 会占用 RAM；当前工程的 OLED 驱动故意保持轻量文本模式。
 
-## Motion / GY-91 Direction
+## GY-91 / MPU9250 运动算法方向
 
 ### kriswiner/MPU9250
 
-- URL: https://github.com/kriswiner/MPU9250
-- Usefulness: widely referenced MPU9250 calibration and AHRS examples.
-- What to learn from it: accelerometer/gyro/magnetometer calibration, Madgwick/Mahony filtering ideas.
-- Caution: Arduino-oriented examples need careful STM32 porting.
+- 地址: https://github.com/kriswiner/MPU9250
+- 参考价值: 常被引用的 MPU9250 校准和 AHRS 示例。
+- 可以学习: 加速度计、陀螺仪、磁力计校准，以及 Madgwick/Mahony 滤波思路。
+- 注意事项: 示例偏 Arduino，需要谨慎移植到 STM32。
 
 ### mirhamza708/Madgwick-filter-STM32-MPU9250
 
-- URL: https://github.com/mirhamza708/Madgwick-filter-STM32-MPU9250
-- Usefulness: STM32-oriented MPU9250 + Madgwick filter reference.
-- What to learn from it: attitude estimation loop and filter timing.
-- Caution: verify I2C/SPI bus assumptions and CPU load before integrating.
+- 地址: https://github.com/mirhamza708/Madgwick-filter-STM32-MPU9250
+- 参考价值: STM32 上 MPU9250 + Madgwick 滤波参考。
+- 可以学习: 姿态估计循环和滤波时序。
+- 注意事项: 集成前要确认 I2C/SPI 总线假设和 CPU 负载。
 
-## Suggested Integration Order
+## 推荐后续集成顺序
 
-1. Keep the current firmware as the stable bare-metal first version.
-2. Add GY-91 as a driver-only module first: raw accel/gyro/mag, WHO_AM_I checks, and calibration status.
-3. Add simple gestures: lift-to-wake, tap-to-page, rough step count.
-4. Only after the sensor pages are stable, consider a richer OLED framebuffer or a small UI task layer.
-5. Move toward FreeRTOS/LVGL only if the project outgrows the current scheduler.
+1. 保持当前固件作为稳定裸机第一版。
+2. 先在真实硬件上验证 GY-91 原始数据、WHO_AM_I、校准状态。
+3. 调整简单手势: 抬腕唤醒、轻敲切页、粗略步数。
+4. 传感器页面稳定后，再考虑更丰富的 OLED 图形界面。
+5. 只有当当前 20ms 调度器不够用时，再考虑 FreeRTOS/LVGL。
