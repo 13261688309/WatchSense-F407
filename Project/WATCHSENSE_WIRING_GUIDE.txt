@@ -1,0 +1,119 @@
+WatchSense-F407 第一版集中接线教程
+
+适用工程:
+- Project/USER/TEST.uvprojx
+- 固件输出: Project/OBJ/TEST.hex
+
+总原则:
+- 所有模块必须共地。
+- I2C 总线统一使用 PB8=SCL, PB9=SDA。
+- I2C 上拉建议 4.7k 到 3.3V；如果模块板已带上拉，一般不用重复加很多组。
+- 本工程按 3.3V 逻辑设计，传感器优先接 3.3V，不要把 5V 信号直接接进 STM32 IO。
+- 接线和插拔前先断电。
+
+一、必须接的调试口
+
+| 功能 | 模块引脚 | STM32F407 引脚 | 说明 |
+| --- | --- | --- | --- |
+| 串口发送 | USB-TTL RX | PA9 / USART1_TX | 电脑接收开发板日志 |
+| 串口接收 | USB-TTL TX | PA10 / USART1_RX | 当前主要用于预留输入 |
+| 串口地 | USB-TTL GND | GND | 必须共地 |
+
+串口参数:
+- 115200 baud
+- 8 data bits
+- no parity
+- 1 stop bit
+
+二、I2C 总线模块
+
+| 模块 | 模块引脚 | STM32F407 引脚 | I2C 地址 | 当前状态 |
+| --- | --- | --- | --- | --- |
+| OLED 0.96 寸 | SCL | PB8 | 0x3C | 已启用 |
+| OLED 0.96 寸 | SDA | PB9 | 0x3C | 已启用 |
+| OLED 0.96 寸 | VCC | 3.3V | - | 若模块只支持 5V，请确认板载稳压和电平 |
+| OLED 0.96 寸 | GND | GND | - | 必须共地 |
+| VL53L0X | SCL | PB8 | 0x29 | 已启用 |
+| VL53L0X | SDA | PB9 | 0x29 | 已启用 |
+| VL53L0X | XSHUT | PB5 | - | 用于复位/启动测距 |
+| VL53L0X | VIN/VCC | 3.3V | - | 优先 3.3V |
+| VL53L0X | GND | GND | - | 必须共地 |
+| MAX30102 | SCL | PB8 | 0x57 | 已启用 |
+| MAX30102 | SDA | PB9 | 0x57 | 已启用 |
+| MAX30102 | VIN/VCC | 3.3V | - | 心率血氧模块 |
+| MAX30102 | GND | GND | - | 必须共地 |
+| GY-91 | SCL | PB8 | 常见 0x68/0x69 等 | 预留，代码未启用 |
+| GY-91 | SDA | PB9 | 常见 0x68/0x69 等 | 预留，代码未启用 |
+| GY-91 | VCC | 3.3V | - | 后续加驱动时再接 |
+| GY-91 | GND | GND | - | 必须共地 |
+
+I2C 接线顺序建议:
+1. 先只接 OLED，确认屏幕显示 WATCHSENSE-F407。
+2. 再接 VL53L0X，确认串口出现 VL53L0X OK。
+3. 再接 MAX30102，确认串口出现 MAX30102 OK。
+4. 如果任意一个 I2C 模块 FAIL，先检查 PB8/PB9 有没有接反、模块供电、GND、上拉电阻。
+
+三、BME280 SPI 接线
+
+| 模块 | 模块引脚 | STM32F407 引脚 | 说明 |
+| --- | --- | --- | --- |
+| BME280 | SCK/SCL | PA5 / SPI1_SCK | 本工程使用 SPI 模式 |
+| BME280 | SDO/MISO | PA6 / SPI1_MISO | 传感器到 MCU |
+| BME280 | SDI/MOSI | PA7 / SPI1_MOSI | MCU 到传感器 |
+| BME280 | CSB/CS | PA4 | 片选 |
+| BME280 | VCC/VIN | 3.3V | 优先 3.3V |
+| BME280 | GND | GND | 必须共地 |
+
+重要:
+- 原 BME280 资料包用过 PB3/PB4/PB5 做 SPI1。
+- 当前整合版不能那样接，因为 PB5 已用于 VL53L0X XSHUT。
+- 以本表 PA5/PA6/PA7/PA4 为准。
+
+四、开发板板载外设
+
+| 功能 | STM32F407 引脚 | 说明 |
+| --- | --- | --- |
+| BEEP | PF8 | 距离低于阈值时鸣叫 |
+| LED0 | PF9 | 运行心跳灯 |
+| LED1 | PF10 | 距离报警指示 |
+| KEY0 | PE4 | 切换页面 |
+| KEY1 | PE3 | 切换 VL53L0X 模式 |
+| KEY2 | PE2 | 切换距离报警阈值/关闭 |
+| WK_UP | PA0 | VL53L0X 100mm 偏移校准 |
+
+五、上电后应该看到什么
+
+串口启动信息应包含:
+- WatchSense-F407 desktop station prototype
+- OLED OK 或 OLED FAIL
+- BME280 OK 或 BME280 FAIL
+- VL53L0X OK 或失败原因
+- MAX30102 OK 或失败原因
+
+OLED:
+- 第 0 行显示 WATCHSENSE-F407
+- KEY0 可切换 dashboard / environment / distance / health / motion-todo
+- health 页会显示 HR、SpO2、IR、RED、BEAT、FINGER 状态
+
+六、常见问题
+
+OLED 不亮:
+- 检查 VCC/GND、PB8/PB9。
+- 常见地址是 0x3C；如果你的屏是 0x3D，修改 Project/HARDWARE/OLED/oled.h 的 OLED_I2C_ADDR。
+
+VL53L0X FAIL:
+- 检查 PB8/PB9、XSHUT->PB5、3.3V、GND。
+- 确认 I2C 总线上没有 SDA/SCL 短路。
+
+BME280 FAIL:
+- 确认你接的是 SPI 引脚 PA5/PA6/PA7/PA4，不是原资料包里的 PB3/PB4/PB5。
+- 检查 CSB 是否接 PA4。
+
+MAX30102 FAIL:
+- 检查地址 0x57、PB8/PB9、3.3V、GND。
+- 如果 health 页显示 NO FINGER，轻放手指并等待几秒，不要压太死。
+- HR/SpO2 是项目演示估算，不是医疗测量。
+
+距离报警一直响:
+- KEY2 切换阈值或关闭报警。
+- 默认阈值表是 80/150/300/600 mm。
