@@ -1,0 +1,30 @@
+# Keil / ARMCC build outputs
+Project/OBJ/*
+!Project/OBJ/TEST.hex
+
+*.o
+*.d
+*.crf
+*.lst
+*.map
+*.htm
+*.lnp
+*.axf
+
+# Keil user/session files
+*.uvguix.*
+*.uvgui.*
+*.scvd
+*.dep
+
+# Archives and local packages
+*.zip
+*.rar
+*.7z
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
