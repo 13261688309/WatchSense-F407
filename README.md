@@ -1,96 +1,82 @@
-# WatchSense-F407 原型工程
+# WatchSense-F407
 
-这是一个基于 STM32F407ZGT6 的桌面原型，目标是先把传感器联调、显示、校准和联动跑稳，后续再缩小成手表形态。
+WatchSense-F407 is an STM32F407ZGT6 desktop prototype for a future watch-style sensor project. The first goal is to make the sensors, display, calibration flow, and linkage behavior stable before shrinking the hardware into a wearable form.
 
-当前固件已经整合:
+## What It Includes
 
-- VL53L0X 激光测距模块，软件 I2C。
-- BME280 温湿度气压模块，SPI1。
-- MAX30102 心率/血氧模块，软件 I2C。
-- GY-91 / MPU9250 九轴运动模块，软件 I2C。
-- 0.96 寸 SSD1306 兼容 OLED，软件 I2C。
-- USART1 串口看板、按键、LED、蜂鸣器联动。
+- VL53L0X time-of-flight distance sensor over software I2C.
+- BME280 temperature, humidity, and pressure sensor over SPI1.
+- MAX30102 heart-rate / SpO2 module over software I2C.
+- GY-91 / MPU9250 9-axis motion module over software I2C.
+- 0.96 inch SSD1306-compatible OLED over software I2C.
+- USART1 serial dashboard, keys, LEDs, and buzzer linkage.
 
-## 当前状态
+## Download
 
-- Keil 工程: `Project/USER/TEST.uvprojx`
-- 预编译 HEX: `Project/OBJ/TEST.hex`
-- 主程序: `Project/USER/test.c`
-- 傻瓜式首次上电教程: `Project/WATCHSENSE_FIRST_RUN_GUIDE.txt`
-- 集中接线表: `Project/WATCHSENSE_WIRING_GUIDE.txt`
-- 原型说明: `Project/WATCHSENSE_PROTOTYPE_README.txt`
-- 参考项目说明: `REFERENCE_PROJECTS.md`
+Use this package for the complete Keil project:
 
-## 第一次使用
+- `WatchSense-F407-Prototype.zip`
 
-第一次接线、上电、校准和排查问题，先看:
+The ZIP contains the full `Project/` tree, Keil project file, source code, drivers, documentation, and prebuilt HEX file.
 
-`Project/WATCHSENSE_FIRST_RUN_GUIDE.txt`
+## Repository Guide
 
-最短安全顺序:
+- First-run tutorial: `Project/WATCHSENSE_FIRST_RUN_GUIDE.txt`
+- Wiring guide: `Project/WATCHSENSE_WIRING_GUIDE.txt`
+- Prototype notes: `Project/WATCHSENSE_PROTOTYPE_README.txt`
+- Reference notes: `REFERENCE_PROJECTS.md`
 
-1. 先接 USB-TTL 和 OLED。
-2. 再接 VL53L0X，用 100mm 目标按 `WK_UP` 校准。
-3. 再接 MAX30102，放手指确认 IR/RED 数值会变大。
-4. 再接 GY-91 / MPU9250，切到 `motion` 页面，保持静止，按 `WK_UP` 校准。
-5. 最后接 BME280 到 SPI1，等待温湿度读数稳定。
+## Quick First Run
 
-## 硬件引脚速查
+1. Connect USB-TTL and OLED first.
+2. Add VL53L0X and calibrate it at 100 mm with `WK_UP`.
+3. Add MAX30102 and check that IR/RED values change when a finger is placed on the sensor.
+4. Add GY-91 / MPU9250, switch to the `motion` page, keep the module still, and press `WK_UP`.
+5. Add BME280 on SPI1 and wait for environmental readings to stabilize.
 
-详细接线以 `Project/WATCHSENSE_WIRING_GUIDE.txt` 为准。
+## Pin Summary
 
-| 模块 | 总线 | STM32F407 引脚 |
+| Module | Bus | STM32F407 pins |
 | --- | --- | --- |
 | OLED | I2C | PB8=SCL, PB9=SDA |
 | VL53L0X | I2C | PB8=SCL, PB9=SDA, PB5=XSHUT |
 | MAX30102 | I2C | PB8=SCL, PB9=SDA |
-| GY-91 / MPU9250 | I2C | PB8=SCL, PB9=SDA, AD0=GND 时地址 0x68 |
+| GY-91 / MPU9250 | I2C | PB8=SCL, PB9=SDA, AD0=GND for address 0x68 |
 | BME280 | SPI1 | PA5=SCK, PA6=MISO, PA7=MOSI, PA4=CS |
 | USART1 | UART | PA9=TX, PA10=RX, 115200 baud |
 
-所有模块必须共地。本工程按 3.3V 逻辑设计。
+All modules must share GND. The project is designed for 3.3 V logic.
 
-## 按键功能
+## Controls
 
-| 按键 | 功能 |
+| Key | Function |
 | --- | --- |
-| KEY0 / PE4 | 切换 OLED 和串口页面 |
-| KEY1 / PE3 | 普通页面切换 VL53L0X 测距模式；motion 页面清空运动计数 |
-| KEY2 / PE2 | 切换距离报警阈值或关闭报警 |
-| WK_UP / PA0 | 普通页面做 VL53L0X 100mm 校准；motion 页面做 MPU9250 静止校准 |
+| KEY0 / PE4 | Switch OLED and serial dashboard page |
+| KEY1 / PE3 | Switch VL53L0X profile; reset motion counters on the motion page |
+| KEY2 / PE2 | Cycle distance alarm threshold or turn the alarm off |
+| WK_UP / PA0 | Calibrate VL53L0X at 100 mm; calibrate MPU9250 gyro bias on the motion page |
 
-## 页面
+## Pages
 
-- `dashboard`: 距离、环境、健康摘要和模块状态。
-- `environment`: BME280 温度、湿度、气压。
-- `distance`: VL53L0X 距离、报警阈值、偏移和测距模式。
-- `health`: MAX30102 手指状态、IR/RED 原始值、心跳计数、HR/SpO2 演示估算。
-- `motion`: MPU9250 姿态、粗略步数、轻敲/抬腕次数、磁力计方向和温度。
+- `dashboard`: distance, environment, health summary, and module status.
+- `environment`: BME280 temperature, humidity, and pressure.
+- `distance`: VL53L0X distance, alarm threshold, offset, and profile.
+- `health`: MAX30102 finger status, raw IR/RED, beat count, HR estimate, and SpO2 estimate.
+- `motion`: MPU9250 posture, rough step count, tap/lift count, magnetometer heading, and temperature.
 
-## 编译
+## Build
 
-使用 Keil uVision 编译:
+Build with Keil uVision:
 
 ```powershell
 & 'C:\Keil_v5\UV4\UV4.exe' -j0 -b 'Project\USER\TEST.uvprojx'
 ```
 
-最近一次检查结果为 `0 Error(s), 0 Warning(s)`。
+The latest checked local build completed with `0 Error(s), 0 Warning(s)`.
 
-## 可靠性说明
+## Notes
 
-- 传感器初始化采用 fail-soft 策略: 某个模块缺失会显示 `FAIL`，其他模块继续运行。
-- BME280、VL53L0X、MAX30102、MPU9250 未就绪时会每 5 秒重试。
-- 按键扫描是非阻塞的，长按按键不会卡住 MAX30102 采样。
-- MPU9250 每 50ms 采样一次，用于姿态、轻敲、抬腕和粗略步数联动。
-- MAX30102 的 HR/SpO2 是项目演示估算，不是医疗测量。
-
-## 九轴说明
-
-GY-91 上电时尽量保持静止。进入 `motion` 页面后，按 `WK_UP` 可重新做陀螺仪零偏校准，按 `KEY1` 可清空 STEP/TAP/LIFT 计数。
-
-STEP、TAP、LIFT 是实用演示算法，适合项目展示和联动验证；如果要做真正手表，还需要结合实测继续调阈值。
-
-## 许可说明
-
-这是一个混合嵌入式原型工程，包含本地项目代码和厂商/参考代码。第三方源码保留其原始声明和许可；在完整审计前，不要假设整个工程只有一个统一开源许可证。
+- Sensor initialization is fail-soft: missing modules show `FAIL`, while the rest of the station keeps running.
+- BME280, VL53L0X, MAX30102, and MPU9250 are retried every 5 seconds when not ready.
+- MPU9250 is sampled every 50 ms for posture, tap, lift-up, and rough step linkage.
+- MAX30102 HR/SpO2 values are demo estimates only and are not medical measurements.
